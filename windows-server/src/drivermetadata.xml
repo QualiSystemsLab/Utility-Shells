@@ -6,7 +6,7 @@
             <Command Description="" DisplayName="Orchestration Save" Name="orchestration_save"/>
             <Command Description="" DisplayName="Orchestration Restore" Name="orchestration_restore"/>
         </Category>
-        <Command Name="send_winrm_command" DisplayName="Send WinRM Command" Tags=""
+        <Command Name="send_winrm_command" DisplayName="Send WinRM Command" Tags="allow_unreserved"
                  Description="Send command over pywinRM">
             <Parameters>
                 <Parameter Name="command" Type="String" Mandatory="True" DisplayName="Command" DefaultValue=""
@@ -14,7 +14,7 @@
             </Parameters>
         </Command>
         <Category Name="Heath Check">
-            <Command Name="poll_health_check" DisplayName="Poll Health Check" Tags=""
+            <Command Name="poll_health_check" DisplayName="Poll Health Check" Tags="allow_unreserved"
                      Description="Upload and updates firmware on the resource">
                 <Parameters>
                     <Parameter Name="max_polling_minutes" Type="String" Mandatory="True"
@@ -22,7 +22,7 @@
                                Description="How long to poll server"/>
                 </Parameters>
             </Command>
-            <Command Name="health_check_winrm" DisplayName="Health Check WinRM" Tags=""
+            <Command Name="health_check_winrm" DisplayName="Health Check WinRM" Tags="allow_unreserved"
                      Description="Validate winRM session to device">
             </Command>
         </Category>
