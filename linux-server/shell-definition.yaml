@@ -14,7 +14,7 @@ imports:
 
 node_types:
 
-  vendor.switch.LinuxServer:
+  vendor.switch.Linux Server:
     derived_from: cloudshell.nodes.Compute
     #properties:
     #  my_property:
@@ -32,10 +32,16 @@ node_types:
             default: true
           auto_discovery_description:
             type: string
-            default: Describe the auto discovery
+            default: Run SSH health check to Linux server.
           inventory_description:
             type: string
-            default: Describe the resource shell template
+            default: Linux Server
+          User:
+            description: Linux User for CLI session.
+            type: string
+          Password:
+            description: The password is required for password auth.
+            type: cloudshell.datatypes.Password
     artifacts:
       icon:
         file: shell-icon.png

@@ -1,8 +1,30 @@
-<Driver Description="Describe the purpose of your CloudShell shell" MainClass="driver.LinuxServerDriver" Name="LinuxServerDriver" Version="1.0.0">
+<Driver Description="Describe the purpose of your CloudShell shell" MainClass="driver.LinuxServerDriver"
+        Name="LinuxServerDriver" Version="1.0.0"
+        PythonVersion="3">
     <Layout>
-         <Category Name="Hidden Commands">
-            <Command Description="" DisplayName="Orchestration Save" Name="orchestration_save" />
-            <Command Description="" DisplayName="Orchestration Restore" Name="orchestration_restore" />
+        <Category Name="Hidden Commands">
+            <Command Description="" DisplayName="Orchestration Save" Name="orchestration_save"/>
+            <Command Description="" DisplayName="Orchestration Restore" Name="orchestration_restore"/>
+        </Category>
+        <Command Name="send_custom_command" DisplayName="Send Custom Command" Tags="allow_unreserved"
+                 Description="Send SSH comman">
+            <Parameters>
+                <Parameter Name="command" Type="String" Mandatory="True" DisplayName="Command" DefaultValue=""
+                           Description="command string"/>
+            </Parameters>
+        </Command>
+        <Category Name="Heath Check">
+            <Command Name="poll_health_check" DisplayName="Poll Health Check" Tags="allow_unreserved"
+                     Description="poll device for defined amount of time">
+                <Parameters>
+                    <Parameter Name="max_polling_minutes" Type="String" Mandatory="True"
+                               DisplayName="Max Polling Minutes" DefaultValue="1"
+                               Description="How long to poll server"/>
+                </Parameters>
+            </Command>
+            <Command Name="health_check" DisplayName="Health Check" Tags="allow_unreserved"
+                     Description="Validate SSH session to device">
+            </Command>
         </Category>
     </Layout>
 </Driver>

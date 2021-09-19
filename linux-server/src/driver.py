@@ -1,7 +1,14 @@
 from cloudshell.shell.core.resource_driver_interface import ResourceDriverInterface
 from cloudshell.shell.core.driver_context import InitCommandContext, ResourceCommandContext, AutoLoadResource, \
     AutoLoadAttribute, AutoLoadDetails, CancellationContext
-#from data_model import *  # run 'shellfoundry generate' to generate data model classes
+from cloudshell.shell.core.session.cloudshell_session import CloudShellSessionContext
+from cloudshell.shell.core.session.logging_session import LoggingSessionContext
+
+from data_model import *  # run 'shellfoundry generate' to generate data model classes
+from cli_handler import LinuxSSH
+from timeit import default_timer
+from retrying import retry
+
 
 
 class LinuxServerDriver (ResourceDriverInterface):
@@ -50,6 +57,7 @@ class LinuxServerDriver (ResourceDriverInterface):
 
         return resource.create_autoload_details()
         '''
+        self.health_check(context)
         return AutoLoadDetails([], [])
 
     # </editor-fold>
@@ -130,5 +138,105 @@ class LinuxServerDriver (ResourceDriverInterface):
         return saved_details_object[u'saved_artifact'][u'identifier']
         '''
         pass
+
+    @staticmethod
+    def _get_ssh_session_from_context(context, api):
+        """
+        destructure context and return ssh session
+        :param ResourceCommandContext context:
+        :param CloudShellAPISession api:
+        :return:
+        """
+        resource = LinuxServer.create_from_context(context)
+        resource_name = context.resource.name
+        private_ip = context.resource.address
+        user = resource.user
+        encrypted_password = resource.password
+        decrypted_password = api.DecryptPassword(encrypted_password).Value
+        port_attr = int(resource.cli_tcp_port)
+        ssh_port = port_attr if port_attr else 22
+
+        if not decrypted_password:
+            exc_msg = f"No password populated for '{resource_name}'. Can't get WinRM session"
+            raise ValueError(exc_msg)
+
+        ssh = LinuxSSH(address=private_ip, username=user, password=decrypted_password, port=ssh_port)
+        return ssh
+
+    def send_custom_command(self, context, command):
+        """
+        SSH session test
+        :param ResourceCommandContext context:
+        :param str command:
+        :return:
+        """
+        resource_name = context.resource.name
+        api = CloudShellSessionContext(context).get_api()
+
+        with LoggingSessionContext(context) as logger:
+            ssh = self._get_ssh_session_from_context(context, api)
+            logger.info("'{}' Sending SSH command: '{}'".format(resource_name, command))
+            try:
+                response = ssh.send_command(command)
+            except Exception as e:
+                exc_msg = f"SSH Command failed for '{resource_name}'. {type(e).__name__}: {str(e)}"
+                logger.error(exc_msg)
+                raise Exception(exc_msg)
+        return response
+
+    def health_check(self, context):
+        """
+        SSH session test
+        :param ResourceCommandContext context:
+        :return:
+        """
+        resource_name = context.resource.name
+        api = CloudShellSessionContext(context).get_api()
+
+        with LoggingSessionContext(context) as logger:
+            ssh = self._get_ssh_session_from_context(context, api)
+            logger.info("'{}' Sending SSH Health Check".format(resource_name,))
+            try:
+                cli_user_outp = ssh.send_command("whoami")
+            except Exception as e:
+                err_msg = f"Issue running health check to {resource_name}. {type(e).__name__}: {str(e)}"
+                logger.error(err_msg)
+                api.SetResourceLiveStatus(resource_name, "Error", err_msg)
+                raise Exception(err_msg)
+        current_user = cli_user_outp.split("\n")[0].strip()
+        success_msg = f"SSH Health check passed. Current running user: {current_user}"
+        api.SetResourceLiveStatus(resource_name, "Online", success_msg)
+        return success_msg
+
+    def poll_health_check(self, context, max_polling_minutes):
+        """
+        :param ResourceCommandContext context:
+        :param str max_polling_minutes: to be converted to integer
+        :return:
+        """
+        resource_name = context.resource.name
+        polling_ms = int(max_polling_minutes) * 60 * 1000
+        api = CloudShellSessionContext(context).get_api()
+        ssh = self._get_ssh_session_from_context(context, api)
+
+        @retry(wait_fixed=10000, stop_max_delay=polling_ms)
+        def _poll_for_user():
+            return ssh.send_command("whoami")
+
+        with LoggingSessionContext(context) as logger:
+            start = default_timer()
+            try:
+                whoami_output = _poll_for_user()
+            except Exception as e:
+                exc_msg = f"SSH polling FAILED for '{resource_name}' after {max_polling_minutes} minutes. {type(e).__name__}: {str(e)}"
+                logger.error(exc_msg)
+                api.SetResourceLiveStatus(resource_name, "Error", exc_msg)
+                raise Exception(exc_msg)
+            elapsed = default_timer() - start
+        current_user = whoami_output.split("\n")[0].strip()
+        success_msg = f"SSH polling PASSED after '{elapsed:.2f}' seconds. Current CLI User: '{current_user}'"
+        api.SetResourceLiveStatus(resource_name, "Online", success_msg)
+        return success_msg
+
 
     # </editor-fold>
