@@ -212,7 +212,7 @@ class WindowsServerDriver(ResourceDriverInterface):
     def poll_health_check(self, context, max_polling_minutes):
         """
         :param ResourceCommandContext context:
-        :param int max_polling_minutes:
+        :param str max_polling_minutes: to be converted to integer
         :return:
         """
         from timeit import default_timer
