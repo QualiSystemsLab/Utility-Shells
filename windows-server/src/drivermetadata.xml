@@ -1,0 +1,30 @@
+<Driver Description="Describe the purpose of your CloudShell shell" MainClass="driver.WindowsServerDriver"
+        Name="WindowsServerDriver" Version="1.0.0"
+        PythonVersion="3">
+    <Layout>
+        <Category Name="Hidden Commands">
+            <Command Description="" DisplayName="Orchestration Save" Name="orchestration_save"/>
+            <Command Description="" DisplayName="Orchestration Restore" Name="orchestration_restore"/>
+        </Category>
+        <Command Name="send_winrm_command" DisplayName="Send WinRM Command" Tags=""
+                 Description="Send command over pywinRM">
+            <Parameters>
+                <Parameter Name="command" Type="String" Mandatory="True" DisplayName="Command" DefaultValue=""
+                           Description="Remote Command to send to CMD"/>
+            </Parameters>
+        </Command>
+        <Category Name="Heath Check">
+            <Command Name="poll_health_check" DisplayName="Poll Health Check" Tags=""
+                     Description="Upload and updates firmware on the resource">
+                <Parameters>
+                    <Parameter Name="max_polling_minutes" Type="String" Mandatory="True"
+                               DisplayName="Max Polling Minutes" DefaultValue="1"
+                               Description="How long to poll server"/>
+                </Parameters>
+            </Command>
+            <Command Name="health_check_winrm" DisplayName="Health Check WinRM" Tags=""
+                     Description="Validate winRM session to device">
+            </Command>
+        </Category>
+    </Layout>
+</Driver>
