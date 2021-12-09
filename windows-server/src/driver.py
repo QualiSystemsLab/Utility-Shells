@@ -56,7 +56,6 @@ class WindowsServerDriver(ResourceDriverInterface):
 
         return resource.create_autoload_details()
         '''
-        self.health_check_winrm(context)
         return AutoLoadDetails([], [])
 
     # </editor-fold>
