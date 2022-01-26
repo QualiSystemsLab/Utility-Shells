@@ -6,24 +6,53 @@
             <Command Description="" DisplayName="Orchestration Save" Name="orchestration_save"/>
             <Command Description="" DisplayName="Orchestration Restore" Name="orchestration_restore"/>
         </Category>
-        <Command Name="send_winrm_command" DisplayName="Send WinRM Command" Tags="allow_unreserved"
-                 Description="Send command over pywinRM">
-            <Parameters>
-                <Parameter Name="command" Type="String" Mandatory="True" DisplayName="Command" DefaultValue=""
-                           Description="Remote Command to send to CMD"/>
-            </Parameters>
-        </Command>
+        <Category Name="Send Command">
+            <Command Name="send_custom_command" DisplayName="Send Custom Command" Tags=""
+                     Description="Send WINRM command">
+                <Parameters>
+                    <Parameter Name="command" Type="String" Mandatory="True" DisplayName="Command" DefaultValue=""
+                               Description="command string"/>
+                </Parameters>
+            </Command>
+        </Category>
         <Category Name="Heath Check">
-            <Command Name="poll_health_check" DisplayName="Poll Health Check" Tags="allow_unreserved"
-                     Description="Upload and updates firmware on the resource">
+            <Command Name="poll_health_check" DisplayName="Poll Health Check" Tags=""
+                     Description="poll device for defined amount of time">
                 <Parameters>
                     <Parameter Name="max_polling_minutes" Type="String" Mandatory="True"
                                DisplayName="Max Polling Minutes" DefaultValue="1"
                                Description="How long to poll server"/>
                 </Parameters>
             </Command>
-            <Command Name="health_check_winrm" DisplayName="Health Check WinRM" Tags="allow_unreserved"
-                     Description="Validate winRM session to device">
+            <Command Name="health_check" DisplayName="Health Check" Tags=""
+                     Description="Validate WINRM session to device">
+            </Command>
+        </Category>
+        <Category Name="Ping Commands">
+            <Command Name="ping_target_host" DisplayName="Ping Target Host" Tags=""
+                     Description="Ping any IP and validate output based on packet loss">
+                <Parameters>
+                    <Parameter Name="target_ip" Type="String" Mandatory="True"
+                               DisplayName="Target IP"
+                               Description="Which IP to ping"/>
+                    <Parameter Name="packet_count" Type="String" Mandatory="False"
+                               DisplayName="Packet Count" DefaultValue="4"
+                               Description="How Many Packets To Send: Default to 4"/>
+                    <Parameter Name="packet_loss" Type="String" Mandatory="False"
+                               DisplayName="Packet Loss" DefaultValue="0"
+                               Description="Acceptable Packet Loss. Default to %0"/>
+                </Parameters>
+            </Command>
+            <Command Name="ping_connected_hosts" DisplayName="Ping Connected Hosts" Tags=""
+                     Description="Ping connected resources">
+                <Parameters>
+                    <Parameter Name="packet_count" Type="String" Mandatory="False"
+                               DisplayName="Packet Count" DefaultValue="4"
+                               Description="How Many Packets To Send: Default to 4"/>
+                    <Parameter Name="packet_loss" Type="String" Mandatory="False"
+                               DisplayName="Packet Loss" DefaultValue="0"
+                               Description="Acceptable Packet Loss. Default to %0"/>
+                </Parameters>
             </Command>
         </Category>
     </Layout>

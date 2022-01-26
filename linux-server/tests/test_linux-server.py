@@ -18,7 +18,9 @@ class TestLinuxServerDriver(unittest.TestCase):
     def tearDown(self):
         pass
 
-    def test_000_something(self):
+    def test_ping_command(self):
+
+
         pass
 
 
