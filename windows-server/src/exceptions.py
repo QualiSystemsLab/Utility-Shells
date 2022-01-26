@@ -1,0 +1,2 @@
+class FailedPingException(Exception):
+    pass

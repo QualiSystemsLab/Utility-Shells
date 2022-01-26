@@ -1,6 +1,10 @@
+import json
+from typing import List
+
+from cloudshell.api.cloudshell_api import ResourceInfo
 from cloudshell.shell.core.resource_driver_interface import ResourceDriverInterface
-from cloudshell.shell.core.driver_context import InitCommandContext, ResourceCommandContext, AutoLoadResource, \
-    AutoLoadAttribute, AutoLoadDetails, CancellationContext
+from cloudshell.shell.core.driver_context import InitCommandContext, ResourceCommandContext, AutoLoadDetails, \
+    CancellationContext
 from cloudshell.shell.core.session.cloudshell_session import CloudShellSessionContext
 from cloudshell.shell.core.session.logging_session import LoggingSessionContext
 
@@ -8,10 +12,11 @@ from data_model import *  # run 'shellfoundry generate' to generate data model c
 from cli_handler import LinuxSSH
 from timeit import default_timer
 from retrying import retry
+from helpers.parse_ping_output import parse_ping_output
+from exceptions import FailedPingException
 
 
-
-class LinuxServerDriver (ResourceDriverInterface):
+class LinuxServerDriver(ResourceDriverInterface):
 
     def __init__(self):
         """
@@ -57,7 +62,6 @@ class LinuxServerDriver (ResourceDriverInterface):
 
         return resource.create_autoload_details()
         '''
-        self.health_check(context)
         return AutoLoadDetails([], [])
 
     # </editor-fold>
@@ -195,7 +199,7 @@ class LinuxServerDriver (ResourceDriverInterface):
 
         with LoggingSessionContext(context) as logger:
             ssh = self._get_ssh_session_from_context(context, api)
-            logger.info("'{}' Sending SSH Health Check".format(resource_name,))
+            logger.info("'{}' Sending SSH Health Check".format(resource_name, ))
             try:
                 cli_user_outp = ssh.send_command("whoami")
             except Exception as e:
@@ -238,5 +242,124 @@ class LinuxServerDriver (ResourceDriverInterface):
         api.SetResourceLiveStatus(resource_name, "Online", success_msg)
         return success_msg
 
+    @staticmethod
+    def _get_ping_command(target_ip, packet_count):
+        try:
+            packet_count = int(packet_count) if packet_count else 4
+        except ValueError:
+            raise ValueError(f"Packet count must be integer. Received '{packet_count}'")
+
+        return f"ping {target_ip} -c {packet_count}"
+
+    def ping_target_host(self, context, target_ip, packet_count, packet_loss):
+        """
+        :param ResourceCommandContext context:
+        :return:
+        """
+        resource_name = context.resource.name
+        api = CloudShellSessionContext(context).get_api()
+        res_id = context.reservation.reservation_id
+        ping_command = self._get_ping_command(target_ip, packet_count)
+
+        with LoggingSessionContext(context) as logger:
+            ssh = self._get_ssh_session_from_context(context, api)
+            start_msg = f"'{resource_name}' Sending ping to target IP {target_ip}..."
+            logger.info(start_msg)
+            api.WriteMessageToReservationOutput(res_id, start_msg)
+            try:
+                outp = ssh.send_command(ping_command)
+            except Exception as e:
+                err_msg = f"Issue running ping to ip {target_ip}. {type(e).__name__}: {str(e)}"
+                logger.error(err_msg)
+                api.SetResourceLiveStatus(resource_name, "Error", err_msg)
+                raise Exception(err_msg)
+            ping_data = parse_ping_output(outp)
+            accepted_packet_loss = int(packet_loss) if packet_loss else 0
+            if ping_data.packet_loss_rate > accepted_packet_loss:
+                failed_ping_json = json.dumps(ping_data.as_dict(), indent=4)
+                err_msg = f"FAILED Ping:\n{failed_ping_json}"
+                logger.error(err_msg)
+                api.WriteMessageToReservationOutput(res_id, err_msg)
+                api.SetResourceLiveStatus(resource_name, "Error", err_msg)
+                raise FailedPingException(err_msg)
+
+        success_msg = f"SUCCESSFUL ping: {resource_name} --> {target_ip}"
+        api.SetResourceLiveStatus(resource_name, "Online", success_msg)
+        return success_msg
+
+    @staticmethod
+    def _get_connected_resources(context) -> List[ResourceInfo]:
+        """
+        :param ResourceCommandContext context:
+        :return:
+        """
+        resource_name = context.resource.name
+        connectors = context.connectors
+        api = CloudShellSessionContext(context).get_api()
+        endpoints = []
+        for connector in connectors:
+            if resource_name in connector.target:
+                endpoints.append(connector.source)
+            elif resource_name in connector.source:
+                endpoints.append(connector.target)
+        root_resource_names = [x.split("/")[0] for x in endpoints]
+        return [api.GetResourceDetails(x) for x in root_resource_names]
+
+    def ping_connected_hosts(self, context, packet_count, packet_loss):
+        """
+        Ping hosts with visual connector attached
+        :param ResourceCommandContext context:
+        :param str packet_count:
+        :param str packet_loss:
+        :return:
+        """
+        resource_name = context.resource.name
+        api = CloudShellSessionContext(context).get_api()
+        res_id = context.reservation.reservation_id
+        connected_resources = self._get_connected_resources(context)
+        with LoggingSessionContext(context) as logger:
+            ssh = self._get_ssh_session_from_context(context, api)
+            start_msg = f"'{resource_name}' sending ping to target resources..."
+            logger.info(start_msg)
+            api.WriteMessageToReservationOutput(res_id, start_msg)
+
+            failed = []
+            for resource in connected_resources:
+                ping_command = self._get_ping_command(resource.Address, packet_count)
+                try:
+                    outp = ssh.send_command(ping_command)
+                except Exception as e:
+                    err_msg = f"Issue running ping to resource {resource.Name}. {type(e).__name__}: {str(e)}"
+                    logger.error(err_msg)
+                    api.SetResourceLiveStatus(resource_name, "Error", err_msg)
+                    raise Exception(err_msg)
+                ping_data = parse_ping_output(outp)
+                accepted_packet_loss = int(packet_loss) if packet_loss else 0
+                if ping_data.packet_loss_rate > accepted_packet_loss:
+                    err_msg = f"FAILED Ping: {resource_name} --> {resource.Name}"
+                    logger.error(err_msg)
+                    api.WriteMessageToReservationOutput(res_id, err_msg)
+                    failed.append({"Source Resource": resource_name,
+                                   "Source IP": context.resource.address,
+                                   "Target Resource": resource.Name,
+                                   "Target IP": resource.Address,
+                                   "Packet Loss": ping_data.packet_loss_rate,
+                                   "Packets Transmitted": ping_data.packet_transmit,
+                                   "Packets Received": ping_data.packet_receive})
+                else:
+                    success_msg = f"SUCCESSFUL Ping: {resource_name} --> {resource.Name}"
+                    logger.info(success_msg)
+                    api.WriteMessageToReservationOutput(res_id, success_msg)
+
+            if failed:
+                failed_json = json.dumps(failed, indent=4)
+                err_msg = f"Failed pings:\n{failed_json}"
+                logger.error(err_msg)
+                api.WriteMessageToReservationOutput(res_id, err_msg)
+                api.SetResourceLiveStatus(resource_name, "Error", err_msg)
+                raise FailedPingException(err_msg)
+        success_msg = f"SUCCESSFUL pings to all connected target hosts"
+        api.SetResourceLiveStatus(resource_name, "Online", success_msg)
+        return success_msg
 
     # </editor-fold>
