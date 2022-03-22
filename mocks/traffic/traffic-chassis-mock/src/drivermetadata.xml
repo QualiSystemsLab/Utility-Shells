@@ -1,0 +1,8 @@
+<Driver Description="Describe the purpose of your CloudShell shell" MainClass="driver.TrafficChassisMockDriver"
+        Name="TrafficChassisMockDriver" Version="1.0.0" PythonVersion="3">
+    <Layout>
+
+        <Command Name="get_inventory" DisplayName="Autoload" Tags="" Description="Import device into Cloudshell">
+        </Command>
+    </Layout>
+</Driver>
