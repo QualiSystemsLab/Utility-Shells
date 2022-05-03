@@ -1,1 +1,42 @@
-<Driver Description="Describe the purpose of your CloudShell shell" MainClass="driver.CsApiProxyDriver" Name="CsApiProxyDriver" Version="1.0.0" PythonVersion="3"/>
+<Driver Description="Describe the purpose of your CloudShell shell" MainClass="driver.CsApiProxyDriver"
+        Name="CsApiProxyDriver" Version="1.0.0" PythonVersion="3">
+    <Layout>
+        <Category Name="Sandbox Data">
+            <Command Name="get_sandbox_data" DisplayName="Get Sandbox Data" Tags=""
+                     Description="pull all sandbox data keys as json dictionary">
+            </Command>
+            <Command Name="set_sandbox_data" DisplayName="Set Sandbox Data" Tags=""
+                     Description="pass key and value to set">
+                 <Parameters>
+                    <Parameter Name="key" Type="String" Mandatory="True"
+                               Description="name of key"/>
+                      <Parameter Name="value" Type="String" Mandatory="True"
+                               Description="key value"/>
+                </Parameters>
+            </Command>
+        </Category>
+        <Category Name="Sandbox Console">
+            <Command Name="console_write" DisplayName="Console Write" Tags=""
+                     Description="print message to console">
+                <Parameters>
+                    <Parameter Name="message" Type="String" Mandatory="True"
+                               Description="string message"/>
+                </Parameters>
+            </Command>
+            <Command Name="console_warning" DisplayName="Console Warning" Tags=""
+                     Description="print message to console">
+                <Parameters>
+                    <Parameter Name="message" Type="String" Mandatory="True"
+                               Description="string message"/>
+                </Parameters>
+            </Command>
+            <Command Name="console_success" DisplayName="Console Success" Tags=""
+                     Description="print message to console">
+                <Parameters>
+                    <Parameter Name="message" Type="String" Mandatory="True"
+                               Description="string message"/>
+                </Parameters>
+            </Command>
+        </Category>
+    </Layout>
+</Driver>

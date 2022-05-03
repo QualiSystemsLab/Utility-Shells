@@ -72,7 +72,7 @@ class CsApiProxyDriver (ResourceDriverInterface):
         api = CloudShellSessionContext(context).get_api()
         sb_id = context.reservation.reservation_id
         data_keys = api.GetSandboxData(reservationId=sb_id).SandboxDataKeyValues
-        dict_data = [{"key": x.Key, "value": x.Value} for x in data_keys]
+        dict_data = [{x.Key: x.Value} for x in data_keys]
         return json.dumps(dict_data, indent=4)
 
     def set_sandbox_data(self, context, key, value):
