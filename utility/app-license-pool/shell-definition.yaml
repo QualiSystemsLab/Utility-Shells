@@ -1,0 +1,49 @@
+tosca_definitions_version: tosca_simple_yaml_1_0
+
+metadata:
+  template_name: App License Pool
+  template_author: QualiLab
+  template_version: 0.1.0
+  template_icon: shell-icon.png
+
+description: >
+  TOSCA based resource shell
+
+imports:
+  - cloudshell_standard: cloudshell_resource_standard_2_0_3.yaml
+
+node_types:
+
+  vendor.resource.App License Pool:
+    derived_from: cloudshell.nodes.GenericResource
+    properties:
+      pool limit:
+        type: integer          # optional values: string, integer, float, boolean, cloudshell.datatypes.Password
+        description: number of total licenses
+        default: 1
+        tags: [configuration, setting, readonly_to_users, display_in_diagram]
+    capabilities:
+      auto_discovery_capability:
+        type: cloudshell.capabilities.AutoDiscovery
+        properties:        
+          enable_auto_discovery:
+            type: boolean
+            default: true
+          auto_discovery_description:
+            type: string
+            default: Describe the auto discovery
+          inventory_description:
+            type: string
+            default: Describe the resource shell template
+          pool limit:
+            type: integer          # optional values: string, integer, float, boolean, cloudshell.datatypes.Password
+            description: number of total licenses
+            default: 1
+            tags: [configuration, setting, readonly_to_users, display_in_diagram]
+    artifacts:
+      icon:
+        file: shell-icon.png
+        type: tosca.artifacts.File
+      driver:
+        file: AppLicensePoolDriver.zip
+        type: tosca.artifacts.File
