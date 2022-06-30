@@ -161,11 +161,10 @@ class LinuxServerDriver(ResourceDriverInterface):
         ssh_port = port_attr if port_attr else 22
 
         if not decrypted_password:
-            exc_msg = f"No password populated for '{resource_name}'. Can't get WinRM session"
+            exc_msg = f"No password populated for '{resource_name}'. Can't get SSH session"
             raise ValueError(exc_msg)
 
-        ssh = LinuxSSH(address=private_ip, username=user, password=decrypted_password, port=ssh_port)
-        return ssh
+        return LinuxSSH(address=private_ip, username=user, password=decrypted_password, port=ssh_port)
 
     def send_custom_command(self, context, command):
         """
