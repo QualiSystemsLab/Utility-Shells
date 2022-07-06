@@ -5,12 +5,19 @@
             <Command Name="get_sandbox_data" DisplayName="Get Sandbox Data" Tags=""
                      Description="pull all sandbox data keys as json dictionary">
             </Command>
-            <Command Name="set_sandbox_data" DisplayName="Set Sandbox Data" Tags=""
-                     Description="pass key and value to set">
-                 <Parameters>
+            <Command Name="get_sandbox_data_key" DisplayName="Get Sandbox Data Key" Tags=""
+                     Description="get value matching key">
+                <Parameters>
                     <Parameter Name="key" Type="String" Mandatory="True"
                                Description="name of key"/>
-                      <Parameter Name="value" Type="String" Mandatory="True"
+                </Parameters>
+            </Command>
+            <Command Name="set_sandbox_data" DisplayName="Set Sandbox Data" Tags=""
+                     Description="pass key and value to set">
+                <Parameters>
+                    <Parameter Name="key" Type="String" Mandatory="True"
+                               Description="name of key"/>
+                    <Parameter Name="value" Type="String" Mandatory="True"
                                Description="key value"/>
                 </Parameters>
             </Command>
